@@ -1,24 +1,53 @@
-language: java
-# core streaming still builds on jdk6 and above:
-jdk:
-  - openjdk6
-  - oraclejdk7
-  - oraclejdk8
-
-# Below this line is configuration for deploying to the Sonatype OSS repo
-# http://blog.xeiam.com/2013/05/configure-travis-ci-to-deploy-snapshots.html
-before_install: "git clone -b travis `git config --get remote.origin.url` target/travis"
-after_success: "mvn deploy --settings target/travis/settings.xml"
-
-# whitelist
-branches:
-  only:
-    - master
-    - "2.8"
-    - "2.7"
-
+addons:
+  artifacts:
+    debug: true
+    paths:
+    - libs.zip
+    - build.zip
+    - testbuild.zip
+    - jacoco.exec
+    target_paths: b8267e6d-b80d-423b-b8ef-d51e28837d58
+after_success:
+- ' wget --content-disposition http://search.maven.org/remotecontent?filepath=org/jacoco/jacoco/0.7.7.201606060606/jacoco-0.7.7.201606060606.zip '
+- ' unzip -o jacoco-0.7.7.201606060606.zip  '
+- ' cd lib  '
+- ' mv * ../  '
+- ' cd ..  '
+- ' chmod a+x *  '
+- ' cd $PWD  '
+- ' rm  ''jacoco.exec'''
+- ' export JAVA_TOOL_OPTIONS=-javaagent:$PWD/jacocoagent.jar=destfile=$PWD/jacoco.exec,append=true  '
+- ' travis_wait 720 mvn  test -Dmaven.test.failure.ignore=true -Djacoco.skip=true
+  -Dcobertura.skip=true -Dmaven.clover.skip=true -Dmaven.javadoc.skip=true -Drat.skip=true
+  -Drat.ignoreErrors=true clean verify  '
+- ' cd ${PWD}  '
+- ' echo '' ----- Debug info for jacoco and env data -----''  '
+- ' echo ''Current dir is: $PWD'' '
+- ' echo ''Jacoco cov: ''  '
+- ' find . -name ''*.exec''  '
+- ' echo '' ----------------------------------------------'' '
+- ./df-build.sh
+before_install:
+- git clone -b travis `git config --get remote.origin.url` target/travis
+branches: ''
+cache:
+  directories:
+  - $HOME/.m2
 env:
   global:
-    - secure: "YW0hrdsHvH41pb5uPJ2DGzXrBgOVT7nEyag/bAQoDcSlOQ/g55tnY6rIGkqE/aYD47IroTEhW4yLyM3tZpbrqwagX4dUX90ukjcUwUvFE1ePTSEfdBtuHVwl8f6HmLIIw2yK0dQ1gOJ21T+3g+wddvK+6sWBJJ+s3O1FePDh6X0="
-    - secure: "sGQxvyfg98BFcJcWHQ5BjvDNhbwdgD1yEfkE3qzH4/gzwD/ND1jKhkCX++Glt3DuyAKhENNzXlSkztdCE5wKfK3X6MVvOgzMgiV/BhHIf09EtAjZ35fe4pr+GZImfGZO3qkViooTz3FDJyKJBA3YyMTuo9/eWK8HlUFCZHTjKP8="
-
+  - secure: YW0hrdsHvH41pb5uPJ2DGzXrBgOVT7nEyag/bAQoDcSlOQ/g55tnY6rIGkqE/aYD47IroTEhW4yLyM3tZpbrqwagX4dUX90ukjcUwUvFE1ePTSEfdBtuHVwl8f6HmLIIw2yK0dQ1gOJ21T+3g+wddvK+6sWBJJ+s3O1FePDh6X0=
+  - secure: sGQxvyfg98BFcJcWHQ5BjvDNhbwdgD1yEfkE3qzH4/gzwD/ND1jKhkCX++Glt3DuyAKhENNzXlSkztdCE5wKfK3X6MVvOgzMgiV/BhHIf09EtAjZ35fe4pr+GZImfGZO3qkViooTz3FDJyKJBA3YyMTuo9/eWK8HlUFCZHTjKP8=
+jdk:
+- oraclejdk8
+language: java
+notifications:
+  webhooks:
+    on_failure: always
+    on_start: always
+    on_success: always
+    urls:
+    - http://insights-portal-insights-service-webserver-dev.public-swarm.devfactory.com/travisWebHookListener?build_id=b8267e6d-b80d-423b-b8ef-d51e28837d58
+script:
+- mvn test-compile -Dgpg.skip=true -Dlicense.skip=true
+- mvn test-compile -Dgpg.skip=true -Dlicense.skip=true
+# Modified by Insights Service at 2016-11-27 17:53:12.093830
